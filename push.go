@@ -17,7 +17,8 @@ const (
 
 var (
 	mutex          = &sync.Mutex{}
-	channels       = make(map[string]string)
+	channelsByName = make(map[string]string)
+	channelsByID   = make(map[string]string)
 	marketChannels []string
 )
 
@@ -27,7 +28,7 @@ type subscription struct {
 }
 
 type WSTicker struct {
-	CurrencyPair  float64 `json:"currencyPair"`
+	CurrencyPair  string  `json:"currencyPair"`
 	Last          float64 `json:"last"`
 	LowestAsk     float64 `json:"lowestAsk"`
 	HighestBid    float64 `json:"hihgestBid"`
@@ -86,11 +87,13 @@ func setchannelids() (err error) {
 
 	for k, v := range resp {
 		chid := strconv.Itoa(v.ID)
-		channels[k] = chid
+		channelsByName[k] = chid
+		channelsByID[chid] = k
 		marketChannels = append(marketChannels, chid)
 	}
 
-	channels["TICKER"] = TICKER
+	channelsByName["TICKER"] = TICKER
+	channelsByID[TICKER] = "TICKER"
 	return
 }
 
@@ -222,7 +225,7 @@ func (ws *WSClient) subscribe(chid, chname string) (err error) {
 }
 
 func convertArgsToTicker(args []interface{}) (wsticker WSTicker, err error) {
-	wsticker.CurrencyPair = args[0].(float64)
+	wsticker.CurrencyPair = channelsByID[strconv.FormatFloat(args[0].(float64), 'f', 0, 64)]
 	wsticker.Last, err = strconv.ParseFloat(args[1].(string), 64)
 	if err != nil {
 		err = Error(WSTickerError, "Last")
@@ -390,7 +393,7 @@ func (ws *WSClient) UnsubscribeTicker() error {
 }
 
 func (ws *WSClient) SubscribeMarket(chname string) error {
-	chid := channels[strings.ToUpper(chname)]
+	chid := channelsByName[strings.ToUpper(chname)]
 	if chid == "" {
 		return Error(ChannelError, chname)
 	}
@@ -398,7 +401,7 @@ func (ws *WSClient) SubscribeMarket(chname string) error {
 }
 
 func (ws *WSClient) UnsubscribeMarket(chname string) error {
-	chid := channels[strings.ToUpper(chname)]
+	chid := channelsByName[strings.ToUpper(chname)]
 	if chid == "" {
 		return Error(ChannelError, chname)
 	}
