@@ -18,6 +18,7 @@ func main() {
 	//resp, err := poloniex.TradeReturnDepositAdresses()
 	//resp, err := poloniex.TradeGenerateNewAddress("BTC")
 	//resp, err := poloniex.TradeReturnOpenOrders("btc_lsk")
+	//resp, err := poloniex.TradeReturnAllOpenOrders()
 	//resp, err := poloniex.TradeReturnTradeHistory("btc_lsk")
 	//resp, err := poloniex.TradeReturnTradeHistory("btc_lsk", polo.ZeroTime, time.Now(), 100)
 	//resp, err := poloniex.TradeReturnOrderTrade(70899268924)
