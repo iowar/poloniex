@@ -21,6 +21,11 @@ const (
 	tradingAPIUrl = "https://poloniex.com/tradingApi"
 )
 
+var (
+	throttle      = make(chan time.Time)
+	limiterIsOpen bool
+)
+
 type Poloniex struct {
 	key        string
 	secret     string
@@ -43,12 +48,27 @@ func NewClient(key, secret string, args ...bool) (client *Poloniex, err error) {
 
 		go client.logger.LogRoutine(logbus)
 	}
+
+	if limiterIsOpen {
+		return
+	}
+
+	//Rate Limiter
+	go func() {
+		tick := time.NewTicker(time.Second / 6)
+		for t := range tick.C {
+			select {
+			case throttle <- t:
+			default:
+			}
+		}
+	}()
+
+	limiterIsOpen = true
 	return
 }
 
-/*
-	Public Api Request
-*/
+//Public Api Request
 func (p *Poloniex) publicRequest(action string, respch chan<- []byte, errch chan<- error) {
 
 	defer close(respch)
@@ -64,6 +84,8 @@ func (p *Poloniex) publicRequest(action string, respch chan<- []byte, errch chan
 	}
 
 	req.Header.Add("Accept", "application/json")
+
+	<-throttle
 
 	resp, err := p.httpClient.Do(req)
 	if err != nil {
@@ -118,9 +140,7 @@ func checkServerError(response []byte) error {
 	}
 }
 
-/*
-	Trading Api Request
-*/
+//Trading Api Request
 func (p *Poloniex) tradingRequest(action string, parameters map[string]string,
 	respch chan<- []byte, errch chan<- error) {
 
@@ -160,6 +180,8 @@ func (p *Poloniex) tradingRequest(action string, parameters map[string]string,
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Add("Key", p.key)
 	req.Header.Add("Sign", sign)
+
+	<-throttle
 
 	resp, err := p.httpClient.Do(req)
 	if err != nil {
