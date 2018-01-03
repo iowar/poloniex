@@ -132,6 +132,29 @@ func (p *Poloniex) TradeReturnOpenOrders(currency string) (openorders []OpenOrde
 	return
 }
 
+//New Method
+//Reason: different data type return
+//when currency is 'all'
+func (p *Poloniex) TradeReturnAllOpenOrders() (openorders map[string][]OpenOrder, err error) {
+
+	openorders = make(map[string][]OpenOrder, 0)
+	respch := make(chan []byte)
+	errch := make(chan error)
+
+	parameters := map[string]string{"currencyPair": "all"}
+	go p.tradingRequest("returnOpenOrders", parameters, respch, errch)
+
+	response := <-respch
+	err = <-errch
+
+	if err != nil {
+		return
+	}
+
+	err = json.Unmarshal(response, &openorders)
+	return
+}
+
 /* My Trade History */
 type TradeHistory2 struct {
 	Date        string          `json:"date"`
