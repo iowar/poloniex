@@ -104,7 +104,6 @@ returnDepositsWithdrawals
 type OpenOrder struct {
 	OrderNumber decimal.Decimal `json:"orderNumber, string"`
 	Type        string          `json:"type, string"`
-	Sell        string          `json:"sell, string"`
 	Rate        decimal.Decimal `json:"rate, string"`
 	/*StartingAmount decimal.Decimal `json:"startingAmount, string"`*/
 	Amount decimal.Decimal `json:"amount, string"`
