@@ -80,7 +80,7 @@ func setchannelids() (err error) {
 	if err != nil {
 		return err
 	}
-	resp, err := p.PubReturnTicker()
+	resp, err := p.PubReturnTickers()
 	if err != nil {
 		return err
 	}
