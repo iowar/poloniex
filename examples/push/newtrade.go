@@ -1,7 +1,5 @@
-/*
-	the following code shows
-	how to access NewTrade fields.
-*/
+//the following code shows
+//how to access NewTrade fields.
 package main
 
 import (

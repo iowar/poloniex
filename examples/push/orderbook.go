@@ -1,7 +1,5 @@
-/*
-	the following code shows
-	how to access OrderBook fields.
-*/
+//the following code shows
+//how to access OrderBook fields.
 package main
 
 import (

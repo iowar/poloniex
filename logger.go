@@ -7,16 +7,16 @@ import (
 
 type Logger struct {
 	isOpen bool
-	Lock   *sync.Mutex
+	mu     *sync.Mutex
 }
 
 func (l *Logger) LogRoutine(bus <-chan string) {
 	if l.isOpen {
 		for {
 			message := <-bus
-			l.Lock.Lock()
+			l.mu.Lock()
 			fmt.Println(message)
-			l.Lock.Unlock()
+			l.mu.Unlock()
 		}
 	}
 }

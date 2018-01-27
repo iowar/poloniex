@@ -155,7 +155,7 @@ func (p *Poloniex) TradeReturnAllOpenOrders() (openorders map[string][]OpenOrder
 	return
 }
 
-/* My Trade History */
+//Self Trade History
 type TradeHistory2 struct {
 	Date        string          `json:"date"`
 	Type        string          `json:"type"`
@@ -164,13 +164,11 @@ type TradeHistory2 struct {
 	Amount      decimal.Decimal `json:"amount, string"`
 	Total       decimal.Decimal `json:"total, string"`
 	OrderNumber decimal.Decimal `json:"order_number,string"`
-	/*
-		Category
-		OrderNumber
-		Fee
-		TradeId
-		GlobalTradeId
-	*/
+	//Category
+	//OrderNumber
+	//Fee
+	//TradeId
+	//GlobalTradeId
 }
 
 func (p *Poloniex) TradeReturnTradeHistory(currency string, args ...interface{}) (tradehistory []TradeHistory2, err error) {
