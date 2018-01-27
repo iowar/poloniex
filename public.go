@@ -23,7 +23,7 @@ type Ticker struct {
 	Low24hr       decimal.Decimal `json:"low24hr, string"`
 }
 
-func (p *Poloniex) PubReturnTicker() (tickers map[string]Ticker, err error) {
+func (p *Poloniex) PubReturnTickers() (tickers map[string]Ticker, err error) {
 
 	respch := make(chan []byte)
 	errch := make(chan error)
