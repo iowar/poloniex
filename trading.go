@@ -267,8 +267,8 @@ func (p *Poloniex) TradeBuy(currencyPair string, rate, amount float64) (buy Buy,
 	errch := make(chan error)
 
 	parameters := map[string]string{"currencyPair": strings.ToUpper(currencyPair)}
-	parameters["rate"] = strconv.FormatFloat(float64(rate), 'f', 6, 64)
-	parameters["amount"] = strconv.FormatFloat(float64(amount), 'f', 6, 64)
+	parameters["rate"] = strconv.FormatFloat(float64(rate), 'f', 8, 64)
+	parameters["amount"] = strconv.FormatFloat(float64(amount), 'f', 8, 64)
 
 	go p.tradingRequest("buy", parameters, respch, errch)
 
@@ -291,8 +291,8 @@ func (p *Poloniex) TradeSell(currencyPair string, rate, amount float64) (sell Se
 	errch := make(chan error)
 
 	parameters := map[string]string{"currencyPair": strings.ToUpper(currencyPair)}
-	parameters["rate"] = strconv.FormatFloat(float64(rate), 'f', 6, 64)
-	parameters["amount"] = strconv.FormatFloat(float64(amount), 'f', 6, 64)
+	parameters["rate"] = strconv.FormatFloat(float64(rate), 'f', 8, 64)
+	parameters["amount"] = strconv.FormatFloat(float64(amount), 'f', 8, 64)
 
 	go p.tradingRequest("sell", parameters, respch, errch)
 
