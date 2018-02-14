@@ -22,8 +22,10 @@ const (
 )
 
 var (
-	throttle      = make(chan time.Time)
-	limiterIsOpen bool
+	//Poloniex says we are allowed 6 req/s
+	//but this is not true if you don't want to see
+	//'nonce must be greater than' error 3 req/s is the best option.
+	throttle = time.Tick(time.Second / 3)
 )
 
 type Poloniex struct {
@@ -49,27 +51,13 @@ func NewClient(key, secret string, args ...bool) (client *Poloniex, err error) {
 		go client.logger.LogRoutine(logbus)
 	}
 
-	if limiterIsOpen {
-		return
-	}
-
-	//Rate Limiter
-	go func() {
-		tick := time.NewTicker(time.Second / 6)
-		for t := range tick.C {
-			select {
-			case throttle <- t:
-			default:
-			}
-		}
-	}()
-
-	limiterIsOpen = true
 	return
 }
 
 //Public Api Request
 func (p *Poloniex) publicRequest(action string, respch chan<- []byte, errch chan<- error) {
+
+	<-throttle
 
 	defer close(respch)
 	defer close(errch)
@@ -84,8 +72,6 @@ func (p *Poloniex) publicRequest(action string, respch chan<- []byte, errch chan
 	}
 
 	req.Header.Add("Accept", "application/json")
-
-	<-throttle
 
 	resp, err := p.httpClient.Do(req)
 	if err != nil {
@@ -144,6 +130,8 @@ func checkServerError(response []byte) error {
 func (p *Poloniex) tradingRequest(action string, parameters map[string]string,
 	respch chan<- []byte, errch chan<- error) {
 
+	<-throttle
+
 	defer close(respch)
 	defer close(errch)
 
@@ -180,8 +168,6 @@ func (p *Poloniex) tradingRequest(action string, parameters map[string]string,
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Add("Key", p.key)
 	req.Header.Add("Sign", sign)
-
-	<-throttle
 
 	resp, err := p.httpClient.Do(req)
 	if err != nil {
