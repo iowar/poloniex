@@ -13,7 +13,7 @@ const (
 
 func main() {
 	poloniex, err := polo.NewClient(api_key, api_secret, true)
-	resp, err := poloniex.PubReturnTicker()
+	resp, err := poloniex.PubReturnTickers()
 	//resp, err := poloniex.PubReturn24hVolume()
 	//resp, err := poloniex.PubReturnOrderBook("btc_dgb", 5)
 	//resp, err := poloniex.PubReturnTradeHistory("btc_dgb")
