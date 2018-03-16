@@ -97,7 +97,7 @@ TrollBox is disabled from poloniex. We will give support if it is enable.
 poloniex, err := polo.NewClient(api_key, api_secret, true)
 ~~~
 * Public Api Methods
-    * PubReturnTicker()
+    * PubReturnTickers()
     * PubReturn24hVolume()
     * PubReturnOrderBook()
     * PubReturnTradeHistory()
