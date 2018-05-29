@@ -207,9 +207,6 @@ type CandleStick struct {
 
 func (p *Poloniex) PubReturnChartData(market string, start, end time.Time, period int) (candles []CandleStick, err error) {
 
-	respch := make(chan []byte)
-	errch := make(chan error)
-
 	var v1, v2 int64
 	var periods = []int{300, 900, 1800, 7200, 14400, 86400}
 
@@ -234,6 +231,9 @@ func (p *Poloniex) PubReturnChartData(market string, start, end time.Time, perio
 	} else {
 		return nil, Error(TimeError)
 	}
+
+	respch := make(chan []byte)
+	errch := make(chan error)
 
 	action += fmt.Sprintf("&start=%d&end=%d&period=%d",
 		v1, v2, period)

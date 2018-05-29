@@ -174,8 +174,6 @@ type TradeHistory2 struct {
 func (p *Poloniex) TradeReturnTradeHistory(currency string, args ...interface{}) (tradehistory []TradeHistory2, err error) {
 
 	tradehistory = make([]TradeHistory2, 0)
-	respch := make(chan []byte)
-	errch := make(chan error)
 
 	parameters := map[string]string{"currencyPair": strings.ToUpper(currency)}
 
@@ -201,6 +199,9 @@ func (p *Poloniex) TradeReturnTradeHistory(currency string, args ...interface{})
 
 		parameters["limit"] = strconv.Itoa(limit)
 	}
+
+	respch := make(chan []byte)
+	errch := make(chan error)
 
 	go p.tradingRequest("returnTradeHistory", parameters, respch, errch)
 
