@@ -53,6 +53,30 @@ func (p *Poloniex) TradeReturnCompleteBalances() (completebalances map[string]Ba
 
 }
 
+type Accounts struct {
+	Margin   map[string]decimal.Decimal `json:"margin"`
+	Lending  map[string]decimal.Decimal `json:"lending"`
+	Exchange map[string]decimal.Decimal `json:"exchange"`
+}
+
+func (p *Poloniex) TradeReturnAvailableAccountBalances() (accounts Accounts, err error) {
+	accounts = Accounts{}
+	respch := make(chan []byte)
+	errch := make(chan error)
+
+	go p.tradingRequest("returnAvailableAccountBalances", nil, respch, errch)
+
+	response := <-respch
+	err = <-errch
+
+	if err != nil {
+		return
+	}
+
+	err = json.Unmarshal(response, &accounts)
+	return
+}
+
 func (p *Poloniex) TradeReturnDepositAdresses() (depositaddresses map[string]string, err error) {
 
 	depositaddresses = make(map[string]string)
