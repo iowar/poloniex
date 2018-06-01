@@ -10,7 +10,7 @@ import (
 )
 
 func (p *Poloniex) TradeReturnBalances() (balances map[string]string, err error) {
-	balances = make(map[string]string)
+
 	respch := make(chan []byte)
 	errch := make(chan error)
 
@@ -35,7 +35,6 @@ type Balance struct {
 
 func (p *Poloniex) TradeReturnCompleteBalances() (completebalances map[string]Balance, err error) {
 
-	completebalances = make(map[string]Balance)
 	respch := make(chan []byte)
 	errch := make(chan error)
 
@@ -60,7 +59,7 @@ type Accounts struct {
 }
 
 func (p *Poloniex) TradeReturnAvailableAccountBalances() (accounts Accounts, err error) {
-	accounts = Accounts{}
+
 	respch := make(chan []byte)
 	errch := make(chan error)
 
@@ -79,7 +78,6 @@ func (p *Poloniex) TradeReturnAvailableAccountBalances() (accounts Accounts, err
 
 func (p *Poloniex) TradeReturnDepositAdresses() (depositaddresses map[string]string, err error) {
 
-	depositaddresses = make(map[string]string)
 	respch := make(chan []byte)
 	errch := make(chan error)
 
@@ -197,8 +195,6 @@ type TradeHistory2 struct {
 
 func (p *Poloniex) TradeReturnTradeHistory(currency string, args ...interface{}) (tradehistory []TradeHistory2, err error) {
 
-	tradehistory = make([]TradeHistory2, 0)
-
 	parameters := map[string]string{"currencyPair": strings.ToUpper(currency)}
 
 	if len(args) >= 2 {
@@ -254,7 +250,6 @@ type OrderTrade struct {
 
 func (p *Poloniex) TradeReturnOrderTrade(orderNumber int64) (ordertrades []OrderTrade, err error) {
 
-	ordertrades = make([]OrderTrade, 0)
 	respch := make(chan []byte)
 	errch := make(chan error)
 
