@@ -248,7 +248,6 @@ type OrderTrade struct {
 
 func (p *Poloniex) TradeReturnOrderTrade(orderNumber int64) (ordertrades []OrderTrade, err error) {
 
-	ordertrades = make([]OrderTrade, 0)
 	respch := make(chan []byte)
 	errch := make(chan error)
 
