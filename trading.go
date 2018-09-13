@@ -118,20 +118,18 @@ func (p *Poloniex) TradeGenerateNewAddress(currency string) (newaddress NewAddre
 	return
 }
 
-/*
-TODO
-returnDepositsWithdrawals
-*/
+//TODO
+//returnDepositsWithdrawals
 
 type OpenOrder struct {
 	OrderNumber decimal.Decimal `json:"orderNumber, string"`
 	Type        string          `json:"type, string"`
 	Rate        decimal.Decimal `json:"rate, string"`
-	/*StartingAmount decimal.Decimal `json:"startingAmount, string"`*/
+	//StartingAmount decimal.Decimal `json:"startingAmount, string"`
 	Amount decimal.Decimal `json:"amount, string"`
 	Total  decimal.Decimal `json:"total, string"`
-	/*Date           string*/
-	/*Margin         int*/
+	Date   string          `json:"date"`
+	//Margin         int
 }
 
 func (p *Poloniex) TradeReturnOpenOrders(currency string) (openorders []OpenOrder, err error) {
@@ -185,7 +183,7 @@ type TradeHistory2 struct {
 	Rate        decimal.Decimal `json:"rate, string"`
 	Amount      decimal.Decimal `json:"amount, string"`
 	Total       decimal.Decimal `json:"total, string"`
-	OrderNumber decimal.Decimal `json:"order_number,string"`
+	OrderNumber decimal.Decimal `json:"orderNumber,string"`
 	//Category
 	//OrderNumber
 	//Fee
@@ -250,6 +248,7 @@ type OrderTrade struct {
 
 func (p *Poloniex) TradeReturnOrderTrade(orderNumber int64) (ordertrades []OrderTrade, err error) {
 
+	ordertrades = make([]OrderTrade, 0)
 	respch := make(chan []byte)
 	errch := make(chan error)
 
