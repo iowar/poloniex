@@ -73,7 +73,7 @@ func (p *Poloniex) GetAccountBalances() (accounts Accounts, err error) {
 	return
 }
 
-func (p *Poloniex) GetDepositAdresses() (depositaddresses map[string]string, err error) {
+func (p *Poloniex) GetDepositAddresses() (depositaddresses map[string]string, err error) {
 	respch := make(chan []byte)
 	errch := make(chan error)
 
