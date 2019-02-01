@@ -45,15 +45,15 @@ type MarketUpdate struct {
 	TypeUpdate string `json:"type"`
 }
 
-type OrderBook struct {
+type WSOrderBook struct {
 	Rate      float64 `json:"rate,string"`
 	TypeOrder string  `json:"type"`
 	Amount    float64 `json:"amount,string"`
 }
 
-type OrderBookModify OrderBook
+type WSOrderBookModify WSOrderBook
 
-type OrderBookRemove struct {
+type WSOrderBookRemove struct {
 	Rate      float64 `json:"rate,string"`
 	TypeOrder string  `json:"type"`
 }
@@ -80,7 +80,7 @@ func setchannelids() (err error) {
 	if err != nil {
 		return err
 	}
-	resp, err := p.PubReturnTickers()
+	resp, err := p.GetTickers()
 	if err != nil {
 		return err
 	}
@@ -291,15 +291,15 @@ func convertArgsToMarketUpdate(args []interface{}) (res []MarketUpdate, err erro
 	for i, val := range args {
 		vals := val.([]interface{})
 		marketupdate := MarketUpdate{}
-		orderdatafield := OrderBook{}
+		orderdatafield := WSOrderBook{}
 		tradedatafield := NewTrade{}
 
 		switch vals[0].(string) {
 		case "o":
 			if vals[3].(string) == "0.00000000" {
-				marketupdate.TypeUpdate = "OrderBookRemove"
+				marketupdate.TypeUpdate = "WSOrderBookRemove"
 			} else {
-				marketupdate.TypeUpdate = "OrderBookModify"
+				marketupdate.TypeUpdate = "WSOrderBookModify"
 			}
 
 			if vals[1].(float64) == 1 {
@@ -310,13 +310,13 @@ func convertArgsToMarketUpdate(args []interface{}) (res []MarketUpdate, err erro
 
 			orderdatafield.Rate, err = strconv.ParseFloat(vals[2].(string), 64)
 			if err != nil {
-				err = Error(OrderBookError, "Rate")
+				err = Error(WSOrderBookError, "Rate")
 				return
 			}
 
 			orderdatafield.Amount, err = strconv.ParseFloat(vals[3].(string), 64)
 			if err != nil {
-				err = Error(OrderBookError, "Amount")
+				err = Error(WSOrderBookError, "Amount")
 				return
 			}
 
