@@ -97,17 +97,17 @@ TrollBox is disabled from poloniex. We will give support if it is enable.
 poloniex, err := polo.NewClient(api_key, api_secret, true)
 ~~~
 * Public Api Methods
-    * PubReturnTickers()
-    * PubReturn24hVolume()
-    * PubReturnOrderBook()
-    * PubReturnTradeHistory()
-    * PubReturnChartData()
-    * PubReturnCurrencies()
-    * PubReturnLoanOrders()
+    * GetTickers()
+    * Get24hVolumes()
+    * GetOrderBook()
+    * GetPublicTradeHistory()
+    * GetChartData()
+    * GetCurrencies()
+    * GetLoanOrders()
     
 #### Example
 ~~~go
-resp, err := poloniex.PubReturnTicker()
+resp, err := poloniex.GetTickers()
 if err != nil{
     panic(err)
 }
@@ -127,22 +127,24 @@ poloniex, err := polo.NewClient(api_key, api_secret, true)
 ~~~ 
 
 * Trading Api Methods
-    * TradeReturnBalances()
-    * TradeReturnCompleteBalances()
-    * TradeReturnDepositAdresses()
-    * TradeGenerateNewAddress()
-    * TradeReturnOpenOrders()
-    * TradeReturnAllOpenOrders()
-    * TradeReturnTradeHistory()
-    * TradeReturnTradeHistory()
-    * TradeReturnOrderTrade()
-    * TradeBuy()
-    * TradeSell()
-    * TradeCancelOrder()
+    * GetBalances()
+    * GetCompleteBalances()
+    * GetAccountBalances()
+    * GetDepositAddresses()
+    * GenerateNewAddress()
+    * GetOpenOrders()
+    * GetAllOpenOrders()
+    * CancelOrder()
+    * GetTradeHistory()
+    * GetTradesByOrderID()
+    * GetOrderStat()
+    * Buy()
+    * Sell()
+
 
 #### Example
 ~~~go
-resp, err := poloniex.TradeBuy("btc_dgb", 0.00000099, 10000)
+resp, err := poloniex.Buy("btc_dgb", 0.00000099, 10000)
 if err != nil{
     panic(err)
 }
@@ -153,14 +155,4 @@ fmt.Println(resp)
 License
 ----
 [MIT](https://github.com/iowar/poloniex/blob/master/LICENSE)
-
-
-## Donations
-
-| Name | Address |
-| ------ | ------ |
-| BTC | 1JM2rchFeVtLCTMUeinUcwVc2nnd5jtawX |
-| LTC | LV46TbxeQxD9GyReQyvd5y366Nvn1MrnuF |
-| DGB | DG2R4YxAywenpkVkWS1n3szPWYgBzyxmoZ |
-| USDT | 17fGT7stxZjiREJ8ajAsdNegTRPYNW5Ao1 |
 
