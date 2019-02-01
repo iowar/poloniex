@@ -17,7 +17,7 @@ func main() {
 	resp, err := poloniex.GetBalances()
 	//resp, err := poloniex.GetCompleteBalances()
 	//resp, err := poloniex.GetAccountBalances()
-	//resp, err := poloniex.GetDepositAdresses()
+	//resp, err := poloniex.GetDepositAddresses()
 	//resp, err := poloniex.GenerateNewAddress("USDT")
 	//resp, err := poloniex.GetOpenOrders("btc_dgb")
 	//resp, err := poloniex.GetAllOpenOrders()
