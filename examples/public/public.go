@@ -13,14 +13,15 @@ const (
 
 func main() {
 	poloniex, err := polo.NewClient(api_key, api_secret, true)
-	resp, err := poloniex.PubReturnTickers()
-	//resp, err := poloniex.PubReturn24hVolume()
-	//resp, err := poloniex.PubReturnOrderBook("btc_dgb", 5)
-	//resp, err := poloniex.PubReturnTradeHistory("btc_dgb")
-	//resp, err := poloniex.PubReturnChartData("btc_dgb", polo.ZeroTime, polo.ZeroTime, 300)
-	//resp, err := poloniex.PubReturnChartData("btc_dgb", time.Now().AddDate(0, 0, -5), time.Now(), 86400)
-	//resp, err := poloniex.PubReturnCurrencies()
-	//resp, err := poloniex.PubReturnLoanOrders("BTC")
+
+	resp, err := poloniex.GetTickers()
+	//resp, err := poloniex.Get24hVolumes()
+	//resp, err := poloniex.GetOrderBook("btc_dgb", 1)
+	//resp, err := poloniex.GetPublicTradeHistory("btc_dgb")
+	//resp, err := poloniex.GetPublicTradeHistory("btc_sc", time.Now().AddDate(0, 0, -1), time.Now())
+	//resp, err := poloniex.GetChartData("btc_dgb", time.Now().AddDate(0, 0, -1), time.Now(), "1d")
+	//resp, err := poloniex.GetCurrencies()
+	//resp, err := poloniex.GetLoanOrders("BTC")
 
 	if err != nil {
 		panic(err)

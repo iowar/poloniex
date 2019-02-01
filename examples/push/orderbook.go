@@ -20,14 +20,14 @@ func main() {
 		return
 	}
 
-	var m polo.OrderBook
+	var m polo.WSOrderBook
 
 	for {
 		receive := <-ws.Subs["usdt_btc"]
 		updates := receive.([]polo.MarketUpdate)
 		for _, v := range updates {
 			if v.TypeUpdate == "OrderBookRemove" || v.TypeUpdate == "OrderBookModify" {
-				m = v.Data.(polo.OrderBook)
+				m = v.Data.(polo.WSOrderBook)
 
 				fmt.Printf("Rate:%f, Type:%s, Amount:%f\n",
 					m.Rate, m.TypeOrder, m.Amount)
