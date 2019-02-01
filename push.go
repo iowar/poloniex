@@ -297,9 +297,9 @@ func convertArgsToMarketUpdate(args []interface{}) (res []MarketUpdate, err erro
 		switch vals[0].(string) {
 		case "o":
 			if vals[3].(string) == "0.00000000" {
-				marketupdate.TypeUpdate = "WSOrderBookRemove"
+				marketupdate.TypeUpdate = "OrderBookRemove"
 			} else {
-				marketupdate.TypeUpdate = "WSOrderBookModify"
+				marketupdate.TypeUpdate = "OrderBookModify"
 			}
 
 			if vals[1].(float64) == 1 {
