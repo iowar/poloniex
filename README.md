@@ -86,9 +86,6 @@ for {
 }
 ~~~~
 
-### TrollBox
-TrollBox is disabled from poloniex. We will give support if it is enable.
-
 ### Examples
 * See [Push Api Examples](https://github.com/iowar/poloniex/tree/master/examples/push)
 
