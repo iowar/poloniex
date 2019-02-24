@@ -57,8 +57,6 @@ func NewClient(key, secret string, args ...bool) (client *Poloniex, err error) {
 
 // Create public api request.
 func (p *Poloniex) publicRequest(action string, respch chan<- []byte, errch chan<- error) {
-	<-throttle
-
 	defer close(respch)
 	defer close(errch)
 
@@ -73,6 +71,7 @@ func (p *Poloniex) publicRequest(action string, respch chan<- []byte, errch chan
 
 	req.Header.Add("Accept", "application/json")
 
+	<-throttle
 	resp, err := p.httpClient.Do(req)
 	if err != nil {
 		respch <- nil
@@ -129,7 +128,6 @@ func checkServerError(response []byte) error {
 // Create trading api request.
 func (p *Poloniex) tradingRequest(action string, parameters map[string]string,
 	respch chan<- []byte, errch chan<- error) {
-	<-throttle
 
 	defer close(respch)
 	defer close(errch)
@@ -168,6 +166,7 @@ func (p *Poloniex) tradingRequest(action string, parameters map[string]string,
 	req.Header.Add("Key", p.key)
 	req.Header.Add("Sign", sign)
 
+	<-throttle
 	resp, err := p.httpClient.Do(req)
 	if err != nil {
 		respch <- nil
