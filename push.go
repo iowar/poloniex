@@ -378,7 +378,6 @@ func convertArgsToMarketUpdate(args []interface{}) (res []MarketUpdate, err erro
 }
 
 // sub-function for subscription.
-
 func (ws *WSClient) subscribe(chid int, chname string) (err error) {
 	ws.Lock()
 	defer ws.Unlock()
