@@ -9,7 +9,7 @@ import (
 
 func main() {
 
-	ws, err := polo.NewWSClient(true)
+	ws, err := polo.NewWSClient()
 	if err != nil {
 		return
 	}
@@ -25,6 +25,6 @@ func main() {
 	}()
 
 	for {
-		fmt.Println(<-ws.Subs["ticker"])
+		fmt.Println(<-ws.Subs["TICKER"])
 	}
 }
