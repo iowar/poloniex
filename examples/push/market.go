@@ -13,12 +13,12 @@ func main() {
 		return
 	}
 
-	err = ws.SubscribeMarket("usdt_btc")
+	err = ws.SubscribeMarket("USDT_BTC")
 	if err != nil {
 		return
 	}
 
 	for {
-		fmt.Println(<-ws.Subs["usdt_btc"])
+		fmt.Println(<-ws.Subs["USDT_BTC"])
 	}
 }

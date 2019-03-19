@@ -19,6 +19,6 @@ func main() {
 	}
 
 	for {
-		fmt.Println(<-ws.Subs["ticker"])
+		fmt.Println(<-ws.Subs["TICKER"])
 	}
 }

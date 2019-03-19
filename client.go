@@ -28,8 +28,6 @@ var (
 type Poloniex struct {
 	key        string
 	secret     string
-	logger     Logger
-	LogBus     chan<- string
 	httpClient *http.Client
 }
 

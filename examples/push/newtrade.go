@@ -10,12 +10,12 @@ import (
 
 func main() {
 
-	ws, err := polo.NewWSClient(true)
+	ws, err := polo.NewWSClient()
 	if err != nil {
 		return
 	}
 
-	err = ws.SubscribeMarket("usdt_btc")
+	err = ws.SubscribeMarket("USDT_BTC")
 	if err != nil {
 		return
 	}
@@ -23,7 +23,7 @@ func main() {
 	var n polo.NewTrade
 
 	for {
-		receive := <-ws.Subs["usdt_btc"]
+		receive := <-ws.Subs["USDT_BTC"]
 		updates := receive.([]polo.MarketUpdate)
 		for _, v := range updates {
 			if v.TypeUpdate == "NewTrade" {

@@ -26,16 +26,6 @@ if err != nil {
     * UnsubscribeTicker()
     * UnsubscribeMarket()
 
-For Enable Logger 
-~~~go
-ws, err := polo.NewWSClient(true)
-~~~
-and access Logger
-~~~go
-ws.LogBus <- "Hello LightSide"
-~~~
-
-
 
 ### Ticker
 #### SubscribeTicker()
@@ -45,7 +35,7 @@ if err != nil {
     return
 }
 for {
-    fmt.Println(<-ws.Subs["ticker"])
+    fmt.Println(<-ws.Subs["TICKER"])
 }
 ~~~
 #### UnsubscribeTicker()
@@ -56,35 +46,33 @@ go func() {
     ws.UnsubscribeTicker()
 }()
 for {
-    fmt.Println(<-ws.Subs["ticker"])
+    fmt.Println(<-ws.Subs["TICKER"])
 }
 ~~~
 
-### OrderBook and Trades
+### OrderDepth, OrderBook and Trades
 #### SubscribeMarket()
 ~~~go
-err = ws.SubscribeMarket("usdt_btc")
+err = ws.SubscribeMarket("USDT_BTC")
 if err != nil {
     return
 }
 for {
-    fmt.Println(<-ws.Subs["usdt_btc"])
+    fmt.Println(<-ws.Subs["USDT_BTC"])
 }
 ~~~
 #### UnsubscribeMarket()
 ~~~go
-err = ws.SubscribeMarket("usdt_btc")
+err = ws.SubscribeMarket("USDT_BTC")
 if err != nil {
     return
 }
 go func() {
-    /* If the logger is enabled, LogBus can be used */
-    ws.LogBus <- "[*] Starting Unsubscribe goroutine"
     time.Sleep(time.Second * 10)
-    ws.UnsubscribeMarket("usdt_btc")
+    ws.UnsubscribeMarket("USDT_BTC")
 }()
 for {
-    fmt.Println(<-ws.Subs["usdt_btc"])
+    fmt.Println(<-ws.Subs["USDT_BTC"])
 }
 ~~~~
 

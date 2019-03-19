@@ -2,33 +2,42 @@ package poloniex
 
 import (
 	"encoding/json"
-	"fmt"
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
-	"golang.org/x/net/websocket"
+	"github.com/gorilla/websocket"
 )
 
 const (
-	TICKER     = "1002" /* Ticker Channel Id */
-	SUBSBUFFER = 24     /* Subscriptions Buffer */
+	TICKER     = 1002 // Ticker Channel Id
+	SUBSBUFFER = 24   // Subscriptions Buffer
 )
 
 var (
-	mutex          = &sync.Mutex{}
-	channelsByName = make(map[string]string)
-	channelsByID   = make(map[string]string)
-	marketChannels []string
+	channelsByName = make(map[string]int) // channels map by name
+	channelsByID   = make(map[int]string) // channels map by id
+	marketChannels []int                  // channels list
 )
 
+// subscription and unsubscription
 type subscription struct {
 	Command string `json:"command"`
 	Channel string `json:"channel"`
 }
 
+func (s subscription) toJSON() ([]byte, bool) {
+	json, err := json.Marshal(s)
+	if err != nil {
+		return json, false
+	}
+	return json, true
+}
+
+// for ticker update.
 type WSTicker struct {
-	CurrencyPair  string  `json:"currencyPair"`
+	Symbol        string  `json:"symbol"`
 	Last          float64 `json:"last"`
 	LowestAsk     float64 `json:"lowestAsk"`
 	HighestBid    float64 `json:"hihgestBid"`
@@ -40,24 +49,38 @@ type WSTicker struct {
 	Low24hr       float64 `json:"low24hr"`
 }
 
+// for market update.
 type MarketUpdate struct {
 	Data       interface{}
 	TypeUpdate string `json:"type"`
 }
 
+// "i" messages.
+type OrderDepth struct {
+	Symbol    string `json:"symbol"`
+	OrderBook struct {
+		Asks []Book `json:"asks"`
+		Bids []Book `json:"bids"`
+	} `json:"orderBook"`
+}
+
+// "o" messages
 type WSOrderBook struct {
 	Rate      float64 `json:"rate,string"`
 	TypeOrder string  `json:"type"`
 	Amount    float64 `json:"amount,string"`
 }
 
+// "o" messages.
 type WSOrderBookModify WSOrderBook
 
+// "o" messages.
 type WSOrderBookRemove struct {
 	Rate      float64 `json:"rate,string"`
 	TypeOrder string  `json:"type"`
 }
 
+// "t" messages.
 type NewTrade struct {
 	TradeId   int64   `json:"tradeID,string"`
 	Rate      float64 `json:"rate,string"`
@@ -67,29 +90,46 @@ type NewTrade struct {
 }
 
 type WSClient struct {
-	Subs       map[string]chan interface{}
-	LogBus     chan<- string
-	logger     Logger
-	wssStopChs map[string]chan bool
-	wssLock    *sync.Mutex
-	wssClient  *websocket.Conn
+	Subs       map[string]chan interface{} // subscriptions map
+	wsConn     *websocket.Conn             // websocket connection
+	wsMutex    *sync.Mutex                 // prevent race condition for websocket RW
+	sync.Mutex                             // embedded mutex
 }
 
-func setchannelids() (err error) {
-	p, err := NewClient("", "")
+// Web socket reader.
+func (ws *WSClient) readMessage() ([]byte, error) {
+	ws.wsMutex.Lock()
+	defer ws.wsMutex.Unlock()
+	_, rmsg, err := ws.wsConn.ReadMessage()
 	if err != nil {
-		return err
+		return nil, err
 	}
-	resp, err := p.GetTickers()
+	return rmsg, nil
+}
+
+// Web socket writer.
+func (ws *WSClient) writeMessage(msg []byte) error {
+	ws.wsMutex.Lock()
+	defer ws.wsMutex.Unlock()
+	return ws.wsConn.WriteMessage(1, msg)
+}
+
+// Set channels.
+func setChannelsId() (err error) {
+	publicApi, err := NewClient("", "")
 	if err != nil {
 		return err
 	}
 
-	for k, v := range resp {
-		chid := strconv.Itoa(v.ID)
-		channelsByName[k] = chid
-		channelsByID[chid] = k
-		marketChannels = append(marketChannels, chid)
+	tickers, err := publicApi.GetTickers()
+	if err != nil {
+		return err
+	}
+
+	for k, v := range tickers {
+		channelsByName[k] = v.ID
+		channelsByID[v.ID] = k
+		marketChannels = append(marketChannels, v.ID)
 	}
 
 	channelsByName["TICKER"] = TICKER
@@ -97,135 +137,86 @@ func setchannelids() (err error) {
 	return
 }
 
-func NewWSClient(args ...bool) (wsclient *WSClient, err error) {
-	ws, err := websocket.Dial(pushAPIUrl, "", origin)
+// Create new web socket client.
+func NewWSClient() (wsClient *WSClient, err error) {
+	dialer := &websocket.Dialer{
+		HandshakeTimeout: time.Minute,
+	}
+
+	ws, _, err := dialer.Dial(pushAPIUrl, nil)
 	if err != nil {
 		return
 	}
 
-	wsclient = &WSClient{
-		wssClient:  ws,
-		Subs:       make(map[string]chan interface{}),
-		wssStopChs: make(map[string]chan bool),
-		wssLock:    &sync.Mutex{},
+	wsClient = &WSClient{
+		wsConn:  ws,
+		Subs:    make(map[string]chan interface{}),
+		wsMutex: &sync.Mutex{},
 	}
 
-	if len(args) > 0 && args[0] {
-		logbus := make(chan string)
-		wsclient.LogBus = logbus
-		wsclient.logger = Logger{isOpen: true, Lock: &sync.Mutex{}}
-
-		go wsclient.logger.LogRoutine(logbus)
-	}
-
-	if err = setchannelids(); err != nil {
+	if err = setChannelsId(); err != nil {
 		return
 	}
 
-	if wsclient.logger.isOpen {
-		wsclient.LogBus <- "[*] Created New WSClient."
-	}
-
+	go wsClient.wsHandler()
 	return
 }
 
-func (ws *WSClient) subscribe(chid, chname string) (err error) {
-	ws.wssLock.Lock()
-	defer ws.wssLock.Unlock()
+// Create handler.
+// If the message comes from the channels that are subscribed,
+// it is sent to the chans.
+func (ws *WSClient) wsHandler() {
+	for {
+		msg, err := ws.readMessage()
+		if err != nil {
+			continue
+		}
 
-	if ws.Subs[chname] != nil {
-		return Error(SubscribeError)
-	}
-
-	ws.Subs[chname] = make(chan interface{}, SUBSBUFFER)
-	ws.wssStopChs[chname] = make(chan bool)
-
-	subs := subscription{Command: "subscribe", Channel: chid}
-	msg, err := json.Marshal(subs)
-	if err != nil {
-		return err
-	}
-
-	_, err = ws.wssClient.Write(msg)
-	if err != nil {
-		return err
-	}
-
-	if ws.logger.isOpen {
-		ws.LogBus <- fmt.Sprintf("[*] Subscribed channel '%s'.\n", chname)
-	}
-
-	go func(chid string) {
 		var imsg []interface{}
+		err = json.Unmarshal(msg, &imsg)
+		if err != nil || len(imsg) < 3 {
+			continue
+		}
+
+		arg, ok := imsg[0].(float64)
+		if !ok {
+			continue
+		}
+
+		chid := int(arg)
+		args, ok := imsg[2].([]interface{})
+		if !ok {
+			continue
+		}
+
 		var wsupdate interface{}
-		var rmsg = make([]byte, 128)
-
-		for {
-			select {
-			case <-ws.wssStopChs[chname]:
-				close(ws.wssStopChs[chname])
-				delete(ws.wssStopChs, chname)
-				if ws.logger.isOpen {
-					ws.LogBus <- fmt.Sprintf("[*] Unsubscribed channel '%s'.\n", chname)
-				}
-				return
-			default:
-			}
-
-			read_len, err := ws.wssClient.Read(rmsg)
-			if err != nil {
-				return
-			}
-
-			err = json.Unmarshal(rmsg[:read_len], &imsg)
+		if chid == TICKER {
+			wsupdate, err = convertArgsToTicker(args)
 			if err != nil {
 				continue
 			}
-
-			arg, ok := imsg[0].(float64)
-			if !ok {
+		} else if intInSlice(chid, marketChannels) {
+			wsupdate, err = convertArgsToMarketUpdate(args)
+			if err != nil {
 				continue
 			}
+		} else {
+			continue
+		}
 
-			key := strconv.FormatFloat(arg, 'f', 0, 64)
-
-			if key != chid || len(imsg) < 3 {
-				continue
-			}
-
-			args, ok := imsg[2].([]interface{})
-			if !ok {
-				continue
-			}
-
-			switch chid {
-			case TICKER:
-				wsupdate, err = convertArgsToTicker(args)
-				if err != nil {
-					continue
-				}
-			case stringInSlice(chid, marketChannels):
-				wsupdate, err = convertArgsToMarketUpdate(args)
-				if err != nil {
-					continue
-				}
-			default:
-			}
-
+		chname := channelsByID[chid]
+		if ws.Subs[chname] != nil {
 			select {
 			case ws.Subs[chname] <- wsupdate:
 			default:
-
-				/* fmt.Println("[BLOCKED] No Message Sent! ")  //DEBUG */
 			}
 		}
-	}(chid)
-
-	return nil
+	}
 }
 
+// Convert ticker update arguments and fill wsticker.
 func convertArgsToTicker(args []interface{}) (wsticker WSTicker, err error) {
-	wsticker.CurrencyPair = channelsByID[strconv.FormatFloat(args[0].(float64), 'f', 0, 64)]
+	wsticker.Symbol = channelsByID[int(args[0].(float64))]
 	wsticker.Last, err = strconv.ParseFloat(args[1].(string), 64)
 	if err != nil {
 		err = Error(WSTickerError, "Last")
@@ -286,16 +277,42 @@ func convertArgsToTicker(args []interface{}) (wsticker WSTicker, err error) {
 	return
 }
 
+// Convert market update arguments and fill marketupdate.
 func convertArgsToMarketUpdate(args []interface{}) (res []MarketUpdate, err error) {
 	res = make([]MarketUpdate, len(args))
 	for i, val := range args {
 		vals := val.([]interface{})
-		marketupdate := MarketUpdate{}
-		orderdatafield := WSOrderBook{}
-		tradedatafield := NewTrade{}
+		var marketupdate MarketUpdate
 
 		switch vals[0].(string) {
+		case "i":
+			var orderdepth OrderDepth
+			val := vals[1].(map[string]interface{})
+			orderdepth.Symbol = val["currencyPair"].(string)
+
+			bids := val["orderBook"].([]interface{})[0].(map[string]interface{})
+			asks := val["orderBook"].([]interface{})[1].(map[string]interface{})
+
+			for k, v := range bids {
+				price, _ := strconv.ParseFloat(k, 64)
+				quantity, _ := strconv.ParseFloat(v.(string), 64)
+				book := Book{Price: price, Quantity: quantity}
+				orderdepth.OrderBook.Bids = append(orderdepth.OrderBook.Bids, book)
+			}
+
+			for k, v := range asks {
+				price, _ := strconv.ParseFloat(k, 64)
+				quantity, _ := strconv.ParseFloat(v.(string), 64)
+				book := Book{Price: price, Quantity: quantity}
+				orderdepth.OrderBook.Asks = append(orderdepth.OrderBook.Asks, book)
+			}
+
+			marketupdate.TypeUpdate = "OrderDepth"
+			marketupdate.Data = orderdepth
+
 		case "o":
+			var orderdatafield WSOrderBook
+
 			if vals[3].(string) == "0.00000000" {
 				marketupdate.TypeUpdate = "OrderBookRemove"
 			} else {
@@ -323,7 +340,8 @@ func convertArgsToMarketUpdate(args []interface{}) (res []MarketUpdate, err erro
 			marketupdate.Data = orderdatafield
 
 		case "t":
-			marketupdate.TypeUpdate = "NewTrade"
+			var tradedatafield NewTrade
+
 			tradedatafield.TradeId, err = strconv.ParseInt(vals[1].(string), 10, 64)
 			if err != nil {
 				err = Error(NewTradeError, "TradeId")
@@ -350,59 +368,100 @@ func convertArgsToMarketUpdate(args []interface{}) (res []MarketUpdate, err erro
 
 			tradedatafield.Total = vals[5].(float64)
 
+			marketupdate.TypeUpdate = "NewTrade"
 			marketupdate.Data = tradedatafield
 		}
 
 		res[i] = marketupdate
 	}
 	return res, nil
-
 }
 
-func (ws *WSClient) unsubscribe(chid string) (err error) {
-	ws.wssLock.Lock()
-	defer ws.wssLock.Unlock()
+// sub-function for subscription.
 
-	if ws.Subs[chid] == nil {
+func (ws *WSClient) subscribe(chid int, chname string) (err error) {
+	ws.Lock()
+	defer ws.Unlock()
+
+	//	if ws.Subs[chname] != nil {
+	//		err = Error(SubscribeError)
+	//		return
+	//	}
+	//
+	//	ws.Subs[chname] = make(chan interface{}, SUBSBUFFER)
+
+	if ws.Subs[chname] == nil {
+		ws.Subs[chname] = make(chan interface{}, SUBSBUFFER)
+	}
+
+	subsMsg, _ := subscription{
+		Command: "subscribe",
+		Channel: strconv.Itoa(chid),
+	}.toJSON()
+
+	err = ws.writeMessage(subsMsg)
+	if err != nil {
 		return
 	}
 
-	subs := subscription{Command: "unsubscribe", Channel: chid}
-	msg, err := json.Marshal(subs)
-	if err != nil {
-		return err
-	}
-
-	_, err = ws.wssClient.Write(msg)
-	if err != nil {
-		return err
-	}
-
-	ws.wssStopChs[chid] <- true
-	close(ws.Subs[chid])
-	delete(ws.Subs, chid)
 	return
 }
 
+// sub-function for unsubscription.
+// the chans are not closed once the subscription is made to protect chan address.
+// To prevent chans taking a new address on the memory, thus chans can be used repeatedly.
+func (ws *WSClient) unsubscribe(chname string) (err error) {
+	ws.Lock()
+	defer ws.Unlock()
+
+	if ws.Subs[chname] == nil {
+		return
+	}
+
+	unSubsMsg, _ := subscription{
+		Command: "unsubscribe",
+		Channel: chname,
+	}.toJSON()
+
+	err = ws.writeMessage(unSubsMsg)
+	if err != nil {
+		return err
+	}
+
+	// close(ws.Subs[chname])
+	// delete(ws.Subs, chname)
+	return
+}
+
+// Subscribe to ticker channel.
+// It returns nil if successful.
 func (ws *WSClient) SubscribeTicker() error {
-	return (ws.subscribe(TICKER, "ticker"))
+	return (ws.subscribe(TICKER, "TICKER"))
 }
 
+// Unsubscribe from ticker channel.
+// It returns nil if successful.
 func (ws *WSClient) UnsubscribeTicker() error {
-	return (ws.unsubscribe("ticker"))
+	return (ws.unsubscribe("TICKER"))
 }
 
+// Subscribe to market channel.
+// It returns nil if successful.
 func (ws *WSClient) SubscribeMarket(chname string) error {
-	chid := channelsByName[strings.ToUpper(chname)]
-	if chid == "" {
+	chname = strings.ToUpper(chname)
+	chid, ok := channelsByName[chname]
+	if !ok {
 		return Error(ChannelError, chname)
 	}
 	return (ws.subscribe(chid, chname))
 }
 
+// Unsubscribe from market channel.
+// It returns nil if successful.
 func (ws *WSClient) UnsubscribeMarket(chname string) error {
-	chid := channelsByName[strings.ToUpper(chname)]
-	if chid == "" {
+	chname = strings.ToUpper(chname)
+	_, ok := channelsByName[chname]
+	if !ok {
 		return Error(ChannelError, chname)
 	}
 	return (ws.unsubscribe(chname))
