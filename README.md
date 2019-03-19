@@ -4,7 +4,7 @@
 Poloniex Push, Public and Trading APIs.
 # Install
 ~~~ go
-$ go get github.com/iowar/poloniex
+$ go get -u github.com/iowar/poloniex
 ~~~ 
 
 # APIs
