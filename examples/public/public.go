@@ -12,7 +12,7 @@ const (
 )
 
 func main() {
-	poloniex, err := polo.NewClient(api_key, api_secret, true)
+	poloniex, err := polo.NewClient(api_key, api_secret)
 
 	resp, err := poloniex.GetTickers()
 	//resp, err := poloniex.Get24hVolumes()
