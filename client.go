@@ -10,7 +10,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -31,23 +30,11 @@ type Poloniex struct {
 	httpClient *http.Client
 }
 
-func NewClient(key, secret string, args ...bool) (client *Poloniex, err error) {
-
+func NewClient(key, secret string) (client *Poloniex, err error) {
 	client = &Poloniex{
 		key:        key,
 		secret:     secret,
 		httpClient: &http.Client{Timeout: time.Second * 10},
-	}
-
-	if len(args) > 0 && args[0] {
-		logbus := make(chan string)
-		client.LogBus = logbus
-		client.logger = Logger{
-			isOpen: true,
-			Lock:   &sync.Mutex{},
-		}
-
-		go client.logger.LogRoutine(logbus)
 	}
 
 	return
