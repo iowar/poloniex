@@ -290,8 +290,8 @@ func convertArgsToMarketUpdate(args []interface{}) (res []MarketUpdate, err erro
 			val := vals[1].(map[string]interface{})
 			orderdepth.Symbol = val["currencyPair"].(string)
 
-			bids := val["orderBook"].([]interface{})[0].(map[string]interface{})
-			asks := val["orderBook"].([]interface{})[1].(map[string]interface{})
+			asks := val["orderBook"].([]interface{})[0].(map[string]interface{})
+			bids := val["orderBook"].([]interface{})[1].(map[string]interface{})
 
 			for k, v := range bids {
 				price, _ := strconv.ParseFloat(k, 64)
