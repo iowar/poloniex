@@ -158,18 +158,26 @@ func NewWSClient() (wsClient *WSClient, err error) {
 		return
 	}
 
-	go wsClient.wsHandler()
+	go func() {
+		for {
+			err := wsClient.wsHandler()
+			if err != nil {
+				ws, _, _ := dialer.Dial(pushAPIUrl, nil)
+				wsClient.wsConn = ws
+			}
+		}
+	}()
 	return
 }
 
 // Create handler.
 // If the message comes from the channels that are subscribed,
 // it is sent to the chans.
-func (ws *WSClient) wsHandler() {
+func (ws *WSClient) wsHandler() error {
 	for {
 		msg, err := ws.readMessage()
 		if err != nil {
-			continue
+			return err
 		}
 
 		var imsg []interface{}
